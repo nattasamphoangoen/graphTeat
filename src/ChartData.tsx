@@ -1,5 +1,6 @@
 import { useState, FormEvent } from "react";
-import { useData } from "./context/useData";
+import { useContext } from "react";
+import { DataContext } from "./context/DataContext";
 import TopicDetails from "./components/TopicDetails";
 
 interface DetailForm {
@@ -9,7 +10,9 @@ interface DetailForm {
 }
 
 const ChartData = () => {
-  const { topics, addTopic, addDetail } = useData();
+  const context = useContext(DataContext);
+  if (!context) throw new Error("ChartData must be used within DataProvider");
+  const { topics, addTopic, addDetail } = context;
   const [selectedTopicId, setSelectedTopicId] = useState<number | null>(null);
   const [showDetailForm, setShowDetailForm] = useState(false);
 
@@ -44,15 +47,13 @@ const ChartData = () => {
 
   const handleDetailInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    console.log(":", name, value);
-
     setDetailData({
       ...detailData,
       [name]: value,
     });
   };
 
-  const handleTopicSubmit = (e: FormEvent) => {
+  const handleTopicSubmit = async (e: FormEvent) => {
     e.preventDefault();
     addTopic(topicData.name);
     setTopicData({
@@ -61,7 +62,7 @@ const ChartData = () => {
     setSelectedTopicId(null);
   };
 
-  const handleDetailSubmit = (e: FormEvent) => {
+  const handleDetailSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (selectedTopicId !== null) {
       addDetail(selectedTopicId, {
@@ -176,15 +177,7 @@ const ChartData = () => {
                 type="color"
                 id="color"
                 name="color"
-                style={{
-                  width: "50px", // ปรับขนาดให้ใหญ่ขึ้น
-                  height: "30px",
-                  cursor: "pointer",
-                  marginLeft: "10px",
-                  padding: "0",
-                  background: "none", // ลบพื้นหลังที่ไม่จำเป็น
-                  border: "none",
-                }}
+              className="color-input"
                 value={detailData.color}
                 onChange={handleDetailInputChange}
                 required

@@ -534,6 +534,48 @@ main {
   align-items: center;
 }
 
+.color-input {
+  width: 50px;
+  height: 30px;
+  cursor: pointer;
+  margin-left: 10px;
+  padding: 0;
+  background: none;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.color-input::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.color-input::-webkit-color-swatch {
+  border: none;
+  border-radius: 3px;
+}
+
+/* Loading State */
+.loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 200px;
+  font-size: 1.2rem;
+  color: #666;
+}
+
+.loading-container::after {
+  content: "...";
+  animation: dots 1.5s steps(4, end) infinite;
+}
+
+@keyframes dots {
+  0%, 20% { content: ""; }
+  40% { content: "."; }
+  60% { content: ".."; }
+  80% { content: "..."; }
+}
+
 .sequence {
   color: #666;
   font-size: 0.9rem;

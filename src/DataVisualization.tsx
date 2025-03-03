@@ -1,4 +1,5 @@
-import { useData } from "./context/useData";
+import { useContext } from "react";
+import { DataContext } from "./context/DataContext";
 import {
   // LineChart,
   // Line,
@@ -16,7 +17,27 @@ import {
 } from "recharts";
 
 const DataVisualization = () => {
-  const { topics } = useData();
+  const context = useContext(DataContext);
+  if (!context) throw new Error("DataVisualization must be used within DataProvider");
+  const { topics } = context;
+
+  // // Prepare data for charts
+  // const firstTopicDetails = topics[0]?.details || [];
+  // const secondTopicDetails = topics[1]?.details || [];
+  
+  // console.log("First topic details for PieChart:", firstTopicDetails);
+  // console.log("Second topic details for BarChart:", secondTopicDetails);
+
+  if (!topics.length) {
+    return (
+      <div className="visualization-container">
+        <div className="data-table-section">
+          <h2>No data available</h2>
+          <p>Add some topics and details to see visualizations</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="visualization-container">
@@ -85,7 +106,8 @@ const DataVisualization = () => {
                 cx="50%"
                 cy="50%"
                 outerRadius={100}
-                label
+                label={(entry) => `${entry.name} (${entry.value})`}
+                labelLine={false}
               >
                 {(topics[0]?.details || []).map((entry, index) => (
                   <Cell key={index} fill={entry.color} />

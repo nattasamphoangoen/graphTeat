@@ -1,4 +1,5 @@
-import { createContext, useState, ReactNode } from "react";
+import { createContext, useState, ReactNode, useEffect } from "react";
+import { supabase } from "../lib/supabaseClient";
 
 interface TopicData {
   id: number;
@@ -7,6 +8,8 @@ interface TopicData {
 }
 
 interface DetailData {
+  id?: number;
+  topic_id?: number;
   name: string;
   value: number;
   color: string;
@@ -30,83 +33,195 @@ const DataContext = createContext<DataContextType | undefined>(undefined);
 
 export const DataProvider = ({ children }: { children: ReactNode }) => {
   const [topics, setTopics] = useState<TopicData[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const addTopic = (name: string) => {
-    setTopics((prev) => [
-      ...prev,
-      {
-        id: Date.now(),
-        name,
-        details: [],
-      },
-    ]);
+  // Fetch initial data
+  useEffect(() => {
+    fetchTopics();
+  }, []);
+
+  const fetchTopics = async () => {
+    try {
+      const { data: topicsData, error: topicsError } = await supabase
+        .from('topics')
+        .select('*');
+
+      if (topicsError) throw topicsError;
+
+      const { data: detailsData, error: detailsError } = await supabase
+        .from('details')
+        .select('*');
+
+      if (detailsError) throw detailsError;
+
+      // Combine topics with their details
+      const topicsWithDetails = topicsData.map(topic => ({
+        ...topic,
+        details: (detailsData
+          .filter(detail => detail.topic_id === topic.id) || [])
+          .map(detail => ({
+            ...detail,
+            value: Number(detail.value) // Ensure value is a number
+          }))
+      }));
+
+      console.log('Processed topics data:', topicsWithDetails);
+
+      setTopics(topicsWithDetails);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const addDetail = (topicId: number, detail: DetailData) => {
-    setTopics((prev) =>
-      prev.map((topic) => {
-        if (topic.id === topicId) {
-          return {
-            ...topic,
-            details: [...topic.details, detail],
-          };
-        }
-        return topic;
-      })
-    );
+  const addTopic = async (name: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('topics')
+        .insert([{ name }])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setTopics(prev => [...prev, { ...data, details: [] }]);
+    } catch (error) {
+      console.error('Error adding topic:', error);
+    }
   };
 
-  const deleteTopic = (id: number) => {
-    setTopics((prev) => prev.filter((topic) => topic.id !== id));
+  const addDetail = async (topicId: number, detail: DetailData) => {
+    try {
+      const { data, error } = await supabase
+        .from('details')
+        .insert([{ ...detail, topic_id: topicId }])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setTopics(prev =>
+        prev.map(topic => {
+          if (topic.id === topicId) {
+            return {
+              ...topic,
+          details: [...topic.details, { ...data, value: Number(data.value) }]
+            };
+          }
+          return topic;
+        })
+      );
+    } catch (error) {
+      console.error('Error adding detail:', error);
+    }
   };
 
-  const deleteDetail = (topicId: number, detailIndex: number) => {
-    setTopics((prev) =>
-      prev.map((topic) => {
-        if (topic.id === topicId) {
-          return {
-            ...topic,
-            details: topic.details.filter((_, index) => index !== detailIndex),
-          };
-        }
-        return topic;
-      })
-    );
+  const deleteTopic = async (id: number) => {
+    try {
+      const { error } = await supabase
+        .from('topics')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setTopics(prev => prev.filter(topic => topic.id !== id));
+    } catch (error) {
+      console.error('Error deleting topic:', error);
+    }
   };
 
-  const updateTopic = (id: number, name: string) => {
-    setTopics((prev) =>
-      prev.map((topic) => {
-        if (topic.id === id) {
-          return {
-            ...topic,
-            name,
-          };
-        }
-        return topic;
-      })
-    );
+  const deleteDetail = async (topicId: number, detailIndex: number) => {
+    try {
+      const detail = topics
+        .find(t => t.id === topicId)
+        ?.details[detailIndex];
+
+      if (!detail) return;
+
+      const { error } = await supabase
+        .from('details')
+        .delete()
+        .eq('id', detail.id);
+
+      if (error) throw error;
+
+      setTopics(prev =>
+        prev.map(topic => {
+          if (topic.id === topicId) {
+            return {
+              ...topic,
+              details: topic.details.filter((_, index) => index !== detailIndex)
+            };
+          }
+          return topic;
+        })
+      );
+    } catch (error) {
+      console.error('Error deleting detail:', error);
+    }
   };
 
-  const updateDetail = (
+  const updateTopic = async (id: number, name: string) => {
+    try {
+      const { error } = await supabase
+        .from('topics')
+        .update({ name })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setTopics(prev =>
+        prev.map(topic => {
+          if (topic.id === id) {
+            return { ...topic, name };
+          }
+          return topic;
+        })
+      );
+    } catch (error) {
+      console.error('Error updating topic:', error);
+    }
+  };
+
+  const updateDetail = async (
     topicId: number,
     detailIndex: number,
     detail: DetailData
   ) => {
-    setTopics((prev) =>
-      prev.map((topic) => {
-        if (topic.id === topicId) {
-          const newDetails = [...topic.details];
-          newDetails[detailIndex] = detail;
-          return {
-            ...topic,
-            details: newDetails,
-          };
-        }
-        return topic;
-      })
-    );
+    try {
+      const currentDetail = topics
+        .find(t => t.id === topicId)
+        ?.details[detailIndex];
+
+      if (!currentDetail) return;
+
+      const { error } = await supabase
+        .from('details')
+        .update({ ...detail })
+        .eq('id', currentDetail.id);
+
+      if (error) throw error;
+
+      setTopics(prev =>
+        prev.map(topic => {
+          if (topic.id === topicId) {
+            const newDetails = [...topic.details];
+            newDetails[detailIndex] = { ...detail, id: currentDetail.id };
+            return { ...topic, details: newDetails };
+          }
+          return topic;
+        })
+      );
+    } catch (error) {
+      console.error('Error updating detail:', error);
+    }
   };
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <DataContext.Provider
