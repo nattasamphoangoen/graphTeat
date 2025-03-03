@@ -73,7 +73,7 @@ const TopicDetails = () => {
 
   return (
     <section className="topic-details-section">
-      {topics.length === 0 ? <h2 style={{ margin: "0"}}>No Topics Added Yet</h2> :
+      {topics.length === 0 ? <h4 style={{ margin: "0", color: "gray"}}>No Topics Added Yet</h4> :
       <h2 style={{ margin: "0"}}>Topic Details</h2>
     }
       <div className="topics-list">
