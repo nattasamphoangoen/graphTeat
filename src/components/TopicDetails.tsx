@@ -228,7 +228,7 @@ const TopicDetails = () => {
                   </div>
                 ) : (
                   <>
-                    <h3>{topic.name}</h3>
+                    <h4 style={{ color: 'black', margin: '0' }}>{topic.name} : {topic.chartType}</h4>
                     <div className="topic-actions">
                       <button onClick={() => handleEditTopic(topic.id)}>
                         Edit
