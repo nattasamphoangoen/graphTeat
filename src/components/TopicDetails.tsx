@@ -73,7 +73,9 @@ const TopicDetails = () => {
 
   return (
     <section className="topic-details-section">
-      <h2>Topic Details</h2>
+      {topics.length === 0 ? <h2 style={{ margin: "0"}}>No Topics Added Yet</h2> :
+      <h2 style={{ margin: "0"}}>Topic Details</h2>
+    }
       <div className="topics-list">
         {topics.map((topic: TopicData) => (
           <div key={topic.id} className="topic-card">

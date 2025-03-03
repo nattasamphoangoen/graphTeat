@@ -108,7 +108,7 @@ const ChartData = () => {
       </section> */}
 
       <section className="form-section">
-        <h2>Fill Data</h2>
+        <h2 style={{ margin: "0" }}>Fill Data</h2>
         <form onSubmit={handleTopicSubmit} className="chart-form">
           <div className="form-group">
             <label htmlFor="name">Name:</label>
