@@ -23,16 +23,16 @@ const ChartData = () => {
     color: "#4a90e2",
   });
 
-  const handleTopicSelect = (topicId: number) => {
-    setSelectedTopicId(topicId);
-    const topic = topics.find((t) => t.id === topicId);
-    if (topic) {
-      setTopicData({
-        name: topic.name,
-      });
-    }
-    setShowDetailForm(false);
-  };
+  // const handleTopicSelect = (topicId: number) => {
+  //   setSelectedTopicId(topicId);
+  //   const topic = topics.find((t) => t.id === topicId);
+  //   if (topic) {
+  //     setTopicData({
+  //       name: topic.name,
+  //     });
+  //   }
+  //   setShowDetailForm(false);
+  // };
 
   const handleTopicInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -80,8 +80,8 @@ const ChartData = () => {
 
   return (
     <div className="chart-container">
-      <TopicDetails />
-      <section className="topic-section">
+      {/* <TopicDetails /> */}
+      {/* <section className="topic-section">
         <h2>Select Topic</h2>
         <div className="topic-buttons">
           {topics.map((topic) => (
@@ -105,7 +105,7 @@ const ChartData = () => {
             </div>
           ))}
         </div>
-      </section>
+      </section> */}
 
       <section className="form-section">
         <h2>Fill Data</h2>
@@ -197,6 +197,8 @@ const ChartData = () => {
           </form>
         </section>
       )}
+
+      <TopicDetails />
     </div>
   );
 };

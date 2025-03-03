@@ -1,8 +1,8 @@
 import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
-import FillData from "./FillData";
 import ChartData from "./ChartData";
 import DataVisualization from "./DataVisualization";
-import Chat from "./pages/Chat";
+// import FillData from "./FillData";
+// import Chat from "./pages/Chat";
 
 const AppRouter = () => {
   return (
@@ -13,20 +13,20 @@ const AppRouter = () => {
             Dashboard
           </a>
           <div className="nav-links">
-            <Link to="/backup">Backup</Link>
+            {/* <Link to="/backup">Backup</Link> */}
             <Link to="/chart">Chart Data</Link>
             <Link to="/visualization">Visualization</Link>
-            <Link to="/chat">Chat</Link>
+            {/* <Link to="/chat">Chat</Link> */}
           </div>
         </div>
       </nav>
 
       <main>
         <Routes>
-          <Route path="/backup" element={<FillData />} />
+          {/* <Route path="/backup" element={<FillData />} /> */}
           <Route path="/chart" element={<ChartData />} />
           <Route path="/visualization" element={<DataVisualization />} />
-          <Route path="/chat" element={<Chat />} />
+          {/* <Route path="/chat" element={<Chat />} /> */}
           <Route path="/" element={<ChartData />} />
         </Routes>
       </main>

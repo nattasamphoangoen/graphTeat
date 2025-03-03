@@ -404,14 +404,17 @@ main {
 .topic-details-section {
   max-width: 1200px;
   margin: 2rem auto;
-  padding: 0 1rem;
+  /* padding: 0 1rem; */
 }
 
 .topics-list {
-  display: grid;
+  /* display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 1.5rem;
-  margin-top: 1.5rem;
+  margin-top: 1.5rem; */
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
 }
 
 .topic-card {
@@ -419,6 +422,7 @@ main {
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   padding: 1.5rem;
+  width: 100%;
 }
 
 .topic-header {

@@ -82,6 +82,7 @@ const TopicDetails = () => {
                 <div className="edit-controls">
                   <input
                     type="text"
+                    className="input"
                     value={editingTopic.name}
                     onChange={(e) =>
                       setEditingTopic({ ...editingTopic, name: e.target.value })
@@ -122,6 +123,7 @@ const TopicDetails = () => {
                           <input
                             type="text"
                             value={editingDetail.detail.name}
+                            style={{ width: "50%", color: "#000", background: "#fff" }}
                             onChange={(e) =>
                               setEditingDetail({
                                 ...editingDetail,
@@ -134,6 +136,7 @@ const TopicDetails = () => {
                           />
                           <input
                             type="number"
+                            style={{ width: "50%", color: "#000", background: "#fff" }}
                             value={editingDetail.detail.value}
                             onChange={(e) =>
                               setEditingDetail({
@@ -147,6 +150,7 @@ const TopicDetails = () => {
                           />
                           <input
                             type="color"
+                            style={{ width: "50px", color: "#000", background: "#fff" }}
                             value={editingDetail.detail.color}
                             onChange={(e) =>
                               setEditingDetail({
@@ -196,6 +200,7 @@ const TopicDetails = () => {
                   <input
                     type="text"
                     placeholder="Detail name"
+                    style={{ width: "50%", color: "#000", background: "#fff" }}
                     value={addingDetail.detail.name}
                     onChange={(e) =>
                       setAddingDetail({
@@ -210,6 +215,7 @@ const TopicDetails = () => {
                   <input
                     type="number"
                     placeholder="Value"
+                    style={{ width: "50%", color: "#000", background: "#fff" }}
                     value={addingDetail.detail.value}
                     onChange={(e) =>
                       setAddingDetail({
@@ -224,6 +230,7 @@ const TopicDetails = () => {
                   <input
                     type="color"
                     value={addingDetail.detail.color}
+                    style={{ width: "50px", color: "#000", background: "#fff" }}
                     onChange={(e) =>
                       setAddingDetail({
                         ...addingDetail,
@@ -247,10 +254,11 @@ const TopicDetails = () => {
               ) : (
                 <button
                   className="add-detail-btn"
+                  style={{ color: "#000", background: "#fff", border: "1px solid #000" }}
                   onClick={() =>
                     setAddingDetail({
                       topicId: topic.id,
-                      detail: { name: "", value: 0, color: "#000000" },
+                      detail: { name: "", value: 0, color: "#4a90e2" },
                     })
                   }
                 >
