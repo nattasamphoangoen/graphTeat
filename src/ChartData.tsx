@@ -1,6 +1,6 @@
 import { useState, FormEvent } from "react";
 import { useContext } from "react";
-import { DataContext } from "./context/DataContext";
+import { DataContext, type ChartType } from "./context/DataContext";
 import TopicDetails from "./components/TopicDetails";
 
 interface DetailForm {
@@ -16,8 +16,12 @@ const ChartData = () => {
   const [selectedTopicId, setSelectedTopicId] = useState<number | null>(null);
   const [showDetailForm, setShowDetailForm] = useState(false);
 
-  const [topicData, setTopicData] = useState({
+  const [topicData, setTopicData] = useState<{
+    name: string;
+    chartType: ChartType;
+  }>({
     name: "",
+    chartType: ""
   });
 
   const [detailData, setDetailData] = useState<DetailForm>({
@@ -55,9 +59,14 @@ const ChartData = () => {
 
   const handleTopicSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    addTopic(topicData.name);
+    if (!topicData.chartType) {
+      alert("Please select a chart type");
+      return;
+    }
+    addTopic(topicData.name, topicData.chartType);
     setTopicData({
       name: "",
+      chartType: ""
     });
     setSelectedTopicId(null);
   };
@@ -123,6 +132,22 @@ const ChartData = () => {
               required
               placeholder="Enter name"
             />
+          </div>
+          <div className="form-group">
+            <label htmlFor="chartType">Chart Type:</label>
+            <select
+              id="chartType"
+              name="chartType"
+              className="input"
+              value={topicData.chartType}
+              onChange={(e) => setTopicData({...topicData, chartType: e.target.value as ChartType})}
+              required
+            >
+              <option value="" disabled>Select Chart Type</option>
+              <option value="bar">Bar Chart</option>
+              <option value="pie">Pie Chart</option>
+              <option value="line">Line Chart</option>
+            </select>
           </div>
 
           <button type="submit" className="submit-btn">
