@@ -42,50 +42,37 @@ const DataVisualization = () => {
   const handleExportToExcel = async () => {
     const workbook = new ExcelJS.Workbook();
     
-    // Data Sheet
-    const dataSheet = workbook.addWorksheet('Data');
-    dataSheet.columns = [
-      { header: 'Topic', key: 'topic' },
-      { header: 'Detail', key: 'detail' },
-      { header: 'Value', key: 'value' },
-      { header: 'Color', key: 'color' }
-    ];
+    // Add summary sheet
+    const summarySheet = workbook.addWorksheet('Summary');
+    summarySheet.addRow(['Data Summary']).font = { bold: true, size: 14 };
+    summarySheet.addRow([]);
+    
+    // Topics Overview
+    summarySheet.addRow(['Topics Overview']).font = { bold: true };
+    summarySheet.addRow([]);
 
-    const allData = topics.flatMap(topic => 
-      topic.details.map(detail => ({
-        topic: topic.name,
-        detail: detail.name,
-        value: detail.value,
-        color: detail.color
-      }))
-    );
-    dataSheet.addRows(allData);
-
-    // Create individual sheets for each topic with charts
     for (const topic of topics) {
-      const sheet = workbook.addWorksheet(topic.name);
-      
-      // Add topic data
-      sheet.addRow([`Topic: ${topic.name}`]).font = { bold: true };
-      sheet.addRow(['Chart Type:', topic.chartType]).font = { bold: true };
-      sheet.addRow([]);
-      
-      // Add details
-      sheet.addRow(['Details']).font = { bold: true };
-      sheet.addRow(['Name', 'Value', 'Color', 'Percentage']);
-      
-      const totalValue = topic.details.reduce((sum, d) => sum + d.value, 0);
-      topic.details.forEach(detail => {
-        const percentage = ((detail.value / totalValue) * 100).toFixed(2) + '%';
-        const row = sheet.addRow([detail.name, detail.value, detail.color, percentage]);
-        row.getCell(3).fill = {
-          type: 'pattern',
-          pattern: 'solid',
-          fgColor: { argb: detail.color.replace('#', '') }
-        };
-      });
+      const values = topic.details.map(d => d.value);
+      const totalValue = values.reduce((a, b) => a + b, 0);
+      const avgValue = (totalValue / values.length).toFixed(2);
+      const maxValue = Math.max(...values);
+      const minValue = Math.min(...values);
 
-      // Add chart image
+      // Topic Statistics
+      summarySheet.addRow([`Topic: ${topic.name}`]).font = { bold: true };
+      summarySheet.addRow(['Statistics:', 'Value']);
+      summarySheet.addRow(['Total Items', topic.details.length]);
+      summarySheet.addRow(['Total Value', totalValue]);
+      summarySheet.addRow(['Average Value', avgValue]);
+      summarySheet.addRow(['Maximum Value', maxValue]);
+      summarySheet.addRow(['Minimum Value', minValue]);
+      summarySheet.addRow([]);
+
+      // Details Breakdown header
+      summarySheet.addRow(['Details Breakdown']).font = { bold: true };
+      summarySheet.addRow(['Name', 'Value', 'Color']);
+
+      // Get chart image first to determine layout
       const element = chartRefs.current[`chart-${topic.id}`];
       const chartImage = element ? await htmlToImage.toPng(element) : null;
 
@@ -94,26 +81,45 @@ const DataVisualization = () => {
           buffer: base64ToBuffer(chartImage),
           extension: 'png',
         });
-        sheet.addRow([]);
-        sheet.addImage(imageId, {
-          tl: { col: 0, row: sheet.lastRow!.number + 1 },
-          ext: { width: 500, height: 300 }
+
+        // Add details with chart on the right
+        const detailsStartRow = summarySheet.lastRow!.number + 1;
+        topic.details.forEach(detail => {
+          const row = summarySheet.addRow([detail.name, detail.value, detail.color]);
+          row.getCell(3).fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: detail.color.replace('#', '') }
+          };
+        });
+
+        // Add chart to the right of the details
+        summarySheet.addImage(imageId, {
+          tl: { col: 5, row: detailsStartRow - 10 }, // Align with details section
+          ext: { width: 400, height: 240 }
+        });
+      } else {
+        // If no chart, just add details
+        topic.details.forEach(detail => {
+          const row = summarySheet.addRow([detail.name, detail.value, detail.color]);
+          row.getCell(3).fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: detail.color.replace('#', '') }
+          };
         });
       }
 
-      // Format columns
-      sheet.getColumn(1).width = 25;
-      sheet.getColumn(2).width = 15;
-      sheet.getColumn(3).width = 15;
-      sheet.getColumn(4).width = 15;
+      // Add spacing after each topic
+      summarySheet.addRow([]);
+      summarySheet.addRow([]);
     }
 
-    // Add summary sheet
-    const summarySheet = workbook.addWorksheet('Summary');
-    summarySheet.addRow(['Data Summary']).font = { bold: true, size: 14 };
-    summarySheet.addRow([]);
-    summarySheet.addRow(['Total Topics:', topics.length]);
-    summarySheet.addRow(['Total Details:', topics.reduce((sum, t) => sum + t.details.length, 0)]);
+    // Format columns
+    summarySheet.getColumn(1).width = 25;
+    summarySheet.getColumn(2).width = 15;
+    summarySheet.getColumn(3).width = 15;
+    summarySheet.getColumn(4).width = 5; // Spacing between data and charts
     
     // Save workbook
     await workbook.xlsx.writeBuffer().then(buffer => {
