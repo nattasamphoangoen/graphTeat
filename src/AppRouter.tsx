@@ -21,7 +21,7 @@ const AppRouter = () => {
         </div>
       </nav>
 
-      <main>
+      <main style={{ display: "flex", justifyContent: "center" }}>
         <Routes>
           {/* <Route path="/backup" element={<FillData />} /> */}
           <Route path="/chart" element={<ChartData />} />

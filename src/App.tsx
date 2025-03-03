@@ -5,7 +5,9 @@ import { DataProvider } from "./context/DataContext";
 function App() {
   return (
     <DataProvider>
-      <AppRouter />
+      <div className="app-container">
+        <AppRouter />
+      </div>
     </DataProvider>
   );
 }

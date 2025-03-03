@@ -89,7 +89,7 @@ const ChartData = () => {
   };
 
   return (
-    <div className="chart-container">
+    <div className="chart-container" style={{ padding: "2rem", margin: "0 auto", width: "1200px" }}>
       {/* <TopicDetails /> */}
       {/* <section className="topic-section">
         <h2>Select Topic</h2>
@@ -118,7 +118,7 @@ const ChartData = () => {
       </section> */}
 
       <section className="form-section">
-        <h2 style={{ margin: "0" }}>Fill Data</h2>
+        <h2 style={{ margin: "0", color: "#333", fontSize: "1.5rem" }}>Fill Data</h2>
         <form onSubmit={handleTopicSubmit} className="chart-form">
           <div className="form-group">
             <label htmlFor="name">Name:</label>

@@ -3,8 +3,6 @@ import * as htmlToImage from 'html-to-image';
 import ExcelJS from "exceljs";
 import { DataContext } from "./context/DataContext";
 import {
-  // LineChart,
-  // Line,
   BarChart,
   Bar,
   XAxis,
@@ -15,7 +13,8 @@ import {
   PieChart,
   Pie,
   Cell,
-  ZAxis,
+  LineChart,
+  Line
 } from "recharts";
 
 const base64ToBuffer = (base64: string) => {
@@ -29,28 +28,18 @@ const base64ToBuffer = (base64: string) => {
 };
 
 const DataVisualization = () => {
-  const pieChartRef = useRef<HTMLDivElement>(null);
-  const barChartRef = useRef<HTMLDivElement>(null);
+  const chartRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
   const context = useContext(DataContext);
   if (!context) throw new Error("DataVisualization must be used within DataProvider");
   const { topics } = context;
 
-  // // Prepare data for charts
-  // const firstTopicDetails = topics[0]?.details || [];
-  // const secondTopicDetails = topics[1]?.details || [];
-  
-  // console.log("First topic details for PieChart:", firstTopicDetails);
-  // console.log("Second topic details for BarChart:", secondTopicDetails);
+  const setChartRef = (id: string) => (el: HTMLDivElement | null) => {
+    if (el) {
+      chartRefs.current[id] = el;
+    }
+  };
 
   const handleExportToExcel = async () => {
-    // Capture charts as images
-    const pieChartImage = pieChartRef.current 
-      ? await htmlToImage.toPng(pieChartRef.current)
-      : null;
-    
-    const barChartImage = barChartRef.current
-      ? await htmlToImage.toPng(barChartRef.current)
-      : null;
     const workbook = new ExcelJS.Workbook();
     
     // Data Sheet
@@ -72,68 +61,23 @@ const DataVisualization = () => {
     );
     dataSheet.addRows(allData);
 
-    // Pie Chart Sheet with Image
-    const pieChartSheet = workbook.addWorksheet('Pie Chart');
-    if (pieChartImage) {
-      const imageId1 = workbook.addImage({
-        buffer: base64ToBuffer(pieChartImage),
-        extension: 'png',
-      });
-      pieChartSheet.addImage(imageId1, {
-        tl: { col: 0, row: 0 },
-        ext: { width: 600, height: 400 }
-      });
-    }
-
-    // Bar Chart Sheet with Image
-    const barChartSheet = workbook.addWorksheet('Bar Chart');
-    if (barChartImage) {
-      const imageId2 = workbook.addImage({
-        buffer: base64ToBuffer(barChartImage),
-        extension: 'png',
-      });
-      barChartSheet.addImage(imageId2, {
-        tl: { col: 0, row: 0 },
-        ext: { width: 600, height: 400 }
-      });
-    }
-
-    // Summary Sheet
-    const summarySheet = workbook.addWorksheet('Summary');
-    
-    // Topic Summary
-    summarySheet.addRow(['Data Summary']).font = { bold: true, size: 14 };
-    summarySheet.addRow([]);
-    
-    summarySheet.addRow(['Topics Overview']).font = { bold: true };
-    topics.forEach(topic => {
-      const totalValue = topic.details.reduce((sum, detail) => sum + detail.value, 0);
-      const avgValue = totalValue / topic.details.length;
-      const maxValue = Math.max(...topic.details.map(d => d.value));
-      const minValue = Math.min(...topic.details.map(d => d.value));
+    // Create individual sheets for each topic with charts
+    for (const topic of topics) {
+      const sheet = workbook.addWorksheet(topic.name);
       
-      // Add topic header
-      summarySheet.addRow([`Topic: ${topic.name}`]).font = { bold: true };
+      // Add topic data
+      sheet.addRow([`Topic: ${topic.name}`]).font = { bold: true };
+      sheet.addRow(['Chart Type:', topic.chartType]).font = { bold: true };
+      sheet.addRow([]);
       
-      // Add statistics
-      summarySheet.addRows([
-        ['Statistics:', 'Value'],
-        ['Total Items', topic.details.length],
-        ['Total Value', totalValue],
-        ['Average Value', avgValue.toFixed(2)],
-        ['Maximum Value', maxValue],
-        ['Minimum Value', minValue]
-      ]);
-
-      // Add details header
-      summarySheet.addRow(['Details Breakdown']).font = { bold: true };
+      // Add details
+      sheet.addRow(['Details']).font = { bold: true };
+      sheet.addRow(['Name', 'Value', 'Color', 'Percentage']);
       
-      // Add column headers for details
-      summarySheet.addRow(['Name', 'Value', 'Color']);
-      
-      // Add all details for this topic
+      const totalValue = topic.details.reduce((sum, d) => sum + d.value, 0);
       topic.details.forEach(detail => {
-        const row = summarySheet.addRow([detail.name, detail.value, detail.color]);
+        const percentage = ((detail.value / totalValue) * 100).toFixed(2) + '%';
+        const row = sheet.addRow([detail.name, detail.value, detail.color, percentage]);
         row.getCell(3).fill = {
           type: 'pattern',
           pattern: 'solid',
@@ -141,54 +85,43 @@ const DataVisualization = () => {
         };
       });
 
-      // Add spacing between topics
-      summarySheet.addRows([[''], ['']]);
-    });
+      // Add chart image
+      const element = chartRefs.current[`chart-${topic.id}`];
+      const chartImage = element ? await htmlToImage.toPng(element) : null;
 
-    // Format summary sheet
-    summarySheet.getColumn('A').width = 25;
-    summarySheet.getColumn('B').width = 15;
-    summarySheet.getColumn('C').width = 15;
-    
-    // Add charts
-    if (pieChartImage) {
-      const imageId3 = workbook.addImage({
-        buffer: base64ToBuffer(pieChartImage),
-        extension: 'png',
-      });
-      summarySheet.addImage(imageId3, {
-        tl: { col: 3, row: 1 },
-        ext: { width: 300, height: 200 }
-      });
-    }
-    
-    if (barChartImage) {
-      const imageId4 = workbook.addImage({
-        buffer: base64ToBuffer(barChartImage),
-        extension: 'png',
-      });
-      summarySheet.addImage(imageId4, {
-        tl: { col: 3, row: 15 },
-        ext: { width: 300, height: 200 }
-      });
-    }
-
-    // Format data sheet
-    dataSheet.columns.forEach(column => {
-      if (column.key) {
-        const col = dataSheet.getColumn(column.key);
-        col.width = 15;
-        col.alignment = { horizontal: 'left' };
+      if (chartImage) {
+        const imageId = workbook.addImage({
+          buffer: base64ToBuffer(chartImage),
+          extension: 'png',
+        });
+        sheet.addRow([]);
+        sheet.addImage(imageId, {
+          tl: { col: 0, row: sheet.lastRow!.number + 1 },
+          ext: { width: 500, height: 300 }
+        });
       }
-    });
 
+      // Format columns
+      sheet.getColumn(1).width = 25;
+      sheet.getColumn(2).width = 15;
+      sheet.getColumn(3).width = 15;
+      sheet.getColumn(4).width = 15;
+    }
+
+    // Add summary sheet
+    const summarySheet = workbook.addWorksheet('Summary');
+    summarySheet.addRow(['Data Summary']).font = { bold: true, size: 14 };
+    summarySheet.addRow([]);
+    summarySheet.addRow(['Total Topics:', topics.length]);
+    summarySheet.addRow(['Total Details:', topics.reduce((sum, t) => sum + t.details.length, 0)]);
+    
     // Save workbook
     await workbook.xlsx.writeBuffer().then(buffer => {
       const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'visualization_data.xlsx';
+      a.download = `visualization_data_${new Date().toISOString().split('T')[0]}.xlsx`;
       a.click();
       window.URL.revokeObjectURL(url);
     });
@@ -206,10 +139,10 @@ const DataVisualization = () => {
   }
 
   return (
-    <div className="visualization-container">
+    <div className="visualization-container" style={{ color: "black", margin: "0 auto", padding: "20px", width: "1200px" }}>
       {/* Topics and Details Table */}
       <section className="data-table-section">
-        <h2>Topics and Details</h2>
+        <h2 style={{ color: "black"}}>Topics and Details</h2>
         <div className="data-table">
           <div className="data-actions">
             <button onClick={handleExportToExcel} className="export-btn">
@@ -242,92 +175,69 @@ const DataVisualization = () => {
           </table>
         </div>
       </section>
+
       <section className="charts-section">
         <div className="chart-grid">
-          {/* Line Chart */}
-          {/* <div className="chart-container">
-            <h3>Line Chart View</h3>
-            <LineChart width={500} height={300} data={topics[0]?.details || []}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Line
-                type="monotone"
-                dataKey="value"
-                stroke="#8884d8"
-                activeDot={{ r: 8 }}
-              />
-            </LineChart>
-          </div> */}
-
-          {/* Pie Chart */}
-          <div className="chart-container" ref={pieChartRef}>
-            <div className="chart-header">
-              <h3>Pie Chart View</h3>
+          {topics.map((topic) => (
+            <div key={topic.id} className="chart-container" ref={setChartRef(`chart-${topic.id}`)}>
+              <div className="chart-header">
+                <h3>{topic.name}</h3>
+              </div>
+              {topic.chartType === 'pie' && (
+                <PieChart width={500} height={300}>
+                  <Pie
+                    data={topic.details}
+                    dataKey="value"
+                    nameKey="name"
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={100}
+                    label={(entry) => `${entry.name} (${entry.value})`}
+                    labelLine={false}
+                  >
+                    {topic.details.map((entry, i) => (
+                      <Cell key={i} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                  <Legend />
+                </PieChart>
+              )}
+              {topic.chartType === 'bar' && (
+                <BarChart width={500} height={300} data={topic.details}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis
+                    dataKey="name"
+                    tickFormatter={(value) =>
+                      value.length > 6 ? value.slice(0, 6) + "..." : value
+                    }
+                  />
+                  <YAxis />
+                  <Tooltip />
+                  <Bar dataKey="value">
+                    {topic.details.map((entry, i) => (
+                      <Cell key={i} fill={entry.color} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              )}
+              {topic.chartType === 'line' && (
+                <LineChart width={500} height={300} data={topic.details}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Line
+                    type="monotone"
+                    dataKey="value"
+                    stroke={topic.details[0]?.color || "#8884d8"}
+                    activeDot={{ r: 8 }}
+                  />
+                </LineChart>
+              )}
             </div>
-            <PieChart width={500} height={300}>
-              <Pie
-                data={topics[0]?.details || []}
-                dataKey="value"
-                nameKey="name"
-                cx="50%"
-                cy="50%"
-                outerRadius={100}
-                label={(entry) => `${entry.name} (${entry.value})`}
-                labelLine={false}
-              >
-                {(topics[0]?.details || []).map((entry, index) => (
-                  <Cell key={index} fill={entry.color} />
-                ))}
-              </Pie>
-              <Tooltip />
-              <Legend />
-            </PieChart>
-          </div>
-
-          {/* Bar Chart */}
-          <div className="chart-container" ref={barChartRef}>
-            <div className="chart-header">
-              <h3>Bar Chart View</h3>
-            </div>
-            <BarChart width={500} height={300} data={topics[1]?.details || []}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis
-                dataKey="name"
-                // tick={(props) => {
-                //   const { x, y, payload } = props;
-                //   return (
-                //     <g transform={`translate(${x},${y})`}>
-                //       <text
-                //         x={0}
-                //         y={0}
-                //         dy={10}
-                //         textAnchor="end"
-                //         transform="rotate(-45)"
-                //         style={{ fontSize: "12px" }}
-                //       >
-                //         {payload.value}
-                //       </text>
-                //     </g>
-                //   );
-                // }}
-                tickFormatter={(value) =>
-                  value.length > 6 ? value.slice(0, 6) + "..." : value
-                }
-              />
-              <YAxis />
-              <ZAxis />
-              <Tooltip />
-              {/* <Legend /> */}
-              <Bar dataKey="value">
-                {(topics[1]?.details || []).map((entry, index) => (
-                  <Cell key={index} fill={entry.color} />
-                ))}
-              </Bar>
-            </BarChart>
-          </div>
+          ))}
         </div>
       </section>
     </div>

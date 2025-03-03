@@ -1,13 +1,16 @@
 import { createContext, useState, ReactNode, useEffect } from "react";
 import { supabase } from "../lib/supabaseClient";
 
-interface TopicData {
+export type ChartType = 'pie' | 'bar' | 'line' | '';
+
+export interface TopicData {
   id: number;
   name: string;
+  chartType: ChartType;
   details: DetailData[];
 }
 
-interface DetailData {
+export interface DetailData {
   id?: number;
   topic_id?: number;
   name: string;
@@ -17,11 +20,11 @@ interface DetailData {
 
 interface DataContextType {
   topics: TopicData[];
-  addTopic: (name: string) => void;
+  addTopic: (name: string, chartType: ChartType) => void;
   addDetail: (topicId: number, detail: DetailData) => void;
   deleteTopic: (id: number) => void;
   deleteDetail: (topicId: number, detailIndex: number) => void;
-  updateTopic: (id: number, name: string) => void;
+  updateTopic: (id: number, name: string, chartType: ChartType) => void;
   updateDetail: (
     topicId: number,
     detailIndex: number,
@@ -57,6 +60,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
       // Combine topics with their details
       const topicsWithDetails = topicsData.map(topic => ({
         ...topic,
+        chartType: topic.chartType || 'bar', // Default to bar if not specified
         details: (detailsData
           .filter(detail => detail.topic_id === topic.id) || [])
           .map(detail => ({
@@ -75,11 +79,11 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const addTopic = async (name: string) => {
+  const addTopic = async (name: string, chartType: ChartType) => {
     try {
       const { data, error } = await supabase
         .from('topics')
-        .insert([{ name }])
+        .insert([{ name, chartType }])
         .select()
         .single();
 
@@ -106,7 +110,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
           if (topic.id === topicId) {
             return {
               ...topic,
-          details: [...topic.details, { ...data, value: Number(data.value) }]
+              details: [...topic.details, { ...data, value: Number(data.value) }]
             };
           }
           return topic;
@@ -163,11 +167,11 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const updateTopic = async (id: number, name: string) => {
+  const updateTopic = async (id: number, name: string, chartType: ChartType) => {
     try {
       const { error } = await supabase
         .from('topics')
-        .update({ name })
+        .update({ name, chartType })
         .eq('id', id);
 
       if (error) throw error;
@@ -175,7 +179,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
       setTopics(prev =>
         prev.map(topic => {
           if (topic.id === id) {
-            return { ...topic, name };
+            return { ...topic, name, chartType };
           }
           return topic;
         })
@@ -239,11 +243,5 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     </DataContext.Provider>
   );
 };
+
 export { DataContext };
-// export const useData = () => {
-//   const context = useContext(DataContext);
-//   if (context === undefined) {
-//     throw new Error("useData must be used within a DataProvider");
-//   }
-//   return context;
-// };
